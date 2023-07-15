@@ -1,12 +1,14 @@
 package service;
 
 import model.BlogPost;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import repository.BlogPostRepository;
 import validator.Validator;
 
@@ -23,23 +25,47 @@ class BlogPostServiceTest {
     BlogPostRepository blogPostRepository;
     @Mock
     Validator validator;
-    @InjectMocks
+
     BlogPostService underTest;
+
+    @BeforeEach
+    void setUp() {
+        underTest = new BlogPostService(blogPostRepository, validator);
+    }
     @Test
-    void createBlogPost() {
-        BlogPost postToSave = new BlogPost(1,"title","content","author");
-        HttpStatus expected = HttpStatus.CREATED;
-        HttpStatus actual = underTest.createBlogPost(postToSave);
+    void createBlogPost() throws Exception {
+        BlogPost postToSave = new BlogPost();
+        postToSave.setId(1L);
+        postToSave.setTitle("title");
+        postToSave.setContent("content");
+        postToSave.setAuthor("author");
+
+        when(blogPostRepository.save(any(BlogPost.class))).thenReturn(postToSave);
+        ResponseEntity<BlogPost> savedPost = underTest.createBlogPost(postToSave);
+
         assertAll(
-                () -> assertNotNull(actual),
-                () -> assertEquals(expected.value(),actual.value())
+                () -> assertNotNull(savedPost),
+                () -> assertEquals((postToSave),savedPost.getBody()),
+                () ->assertEquals(HttpStatus.CREATED,savedPost.getStatusCode())
+
         );
     }
 
     @Test
-    void getBlogPostById() {
-    createBlogPost();
+    void found_getBlogPostById() throws Exception {
+        BlogPost blogPost = new BlogPost();
+        blogPost.setId(1L);
+        blogPost.setTitle("title");
+        blogPost.setContent("content");
+        blogPost.setAuthor("author");
+        when(blogPostRepository.save(any(BlogPost.class))).thenReturn(blogPost);
+        when(blogPostRepository.findById(any(Long.class))).thenReturn(Optional.of(blogPost));
+        ResponseEntity<BlogPost>p = underTest.createBlogPost(blogPost);
+        BlogPost foundPost= underTest.getBlogPostById(blogPost.getId());
 
+        assertAll(
+                () -> assertNotNull(foundPost),
+                () -> assertEquals((blogPost),foundPost));
     }
 
     @Test

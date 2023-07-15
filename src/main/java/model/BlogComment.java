@@ -1,10 +1,13 @@
+/**
+ * This class represent Comment object in DB.
+ * One comment can have only one post hence the @OneToOne relationship.
+ * Using LAZY fetch for better performance
+ */
 package model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
-import service.BlogPostService;
 
 @Entity
 @Data
@@ -16,7 +19,7 @@ public class BlogComment {
     private String content;
     private String author;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     public BlogPost post;
 
@@ -29,16 +32,28 @@ public class BlogComment {
         this.post = post;
     }
 
+    /**
+     * Two comments consider equivalent if and only if title, content and author fields are equal
+     * @param o
+     * @return
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof BlogComment)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        return id != null && id.equals(((BlogComment) o).getId());
+        BlogComment that = (BlogComment) o;
+
+        if (!title.equals(that.title)) return false;
+        if (!content.equals(that.content)) return false;
+        return author.equals(that.author);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        int result = title.hashCode();
+        result = 31 * result + content.hashCode();
+        result = 31 * result + author.hashCode();
+        return result;
     }
 }
